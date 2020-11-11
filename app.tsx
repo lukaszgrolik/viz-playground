@@ -1,8 +1,10 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 // import { BrowserRouter as Router, Route, Link, NavLink } from 'react-router-dom';
+import {BrowserRouter, Link, NavLink, Route, Switch} from 'react-router-dom';
 
 import * as Store from './src/store/store';
+import { LegacyView } from './src/views/legacy-view/legacy-view';
 import { MainView } from './src/views/main-view';
 // import { Store } from './src/store/store';
 
@@ -62,20 +64,33 @@ viz.draw([0, data.values.length - 1], data.values.length, x => {
 };
 
 const store = new Store.Store();
-store.charts.length = 0;
-store.charts.push(...data.charts.map(chart => new Store.Chart(store, chart.id, chart.projectId, chart.label, chart.code)));
-store.projects.length = 0;
-store.projects.push(...data.projects.map(project => new Store.Project(store, project.id, project.name)));
 
 // const store = new Store();
 // store.localStorage.initData();
 // store.localStorage.loadData();
 
 const app = (
-    // <Router>
-        // <MainView store={store} />
-        <MainView store={store} />
-    // </Router>
+    <BrowserRouter>
+        <ul>
+            <NavLink activeStyle={{ fontWeight: 'bold' }} exact to="/">Home</NavLink>
+            <NavLink activeStyle={{ fontWeight: 'bold' }} to="/projects">Projects</NavLink>
+            <NavLink activeStyle={{ fontWeight: 'bold' }} to="/legacy">Legacy</NavLink>
+        </ul>
+
+        <Switch>
+            <Route path="/" exact={true}>
+                <p>home</p>
+            </Route>
+
+            <Route path="/projects">
+                <MainView store={store} />
+            </Route>
+
+            <Route path="/legacy">
+                <LegacyView />
+            </Route>
+        </Switch>
+    </BrowserRouter>
 );
 
 ReactDOM.render(app, document.getElementById('react-root'));

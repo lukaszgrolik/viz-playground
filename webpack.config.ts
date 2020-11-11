@@ -58,6 +58,14 @@ const config: webpack.Configuration = {
                     transpileOnly: true,
                 }
             },
+            {
+                test: /ace-builds.*\/worker-.*$/,
+                loader: 'file-loader',
+                options: {
+                    esModule: false,
+                    name: '[name].[hash:8].[ext]',
+                },
+            },
         ],
     },
     plugins,

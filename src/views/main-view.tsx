@@ -1,16 +1,33 @@
 import * as React from 'react';
+import { useRouteMatch } from 'react-router-dom';
+import {action} from 'mobx';
 import {observer} from 'mobx-react-lite';
 
-import { Store } from '../store/store';
+import * as Store from '../store/store';
 import { ChartsView } from './charts-view/charts-view';
-import { LegacyView } from './legacy-view/legacy-view';
 
-export const MainView: React.FunctionComponent<{store: Store}> = observer(({store}) => {
+export const MainView: React.FunctionComponent<{store: Store.Store}> = observer(({store}) => {
+    const [started, setStarted] = React.useState(false);
+    const [pending, setPending] = React.useState(false);
+
+    React.useEffect(() => {
+        setStarted(true);
+        setPending(true);
+
+        (async () => {
+            await store.api.fetchData();
+
+            setPending(false);
+        })();
+    }, []);
+
     return (
         <div>
-            <ChartsView store={store} />
-
-            <LegacyView />
+            {
+                started && !pending
+                &&
+                <ChartsView store={store} />
+            }
         </div>
     );
 });

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d3 from "d3";
 
-import * as Viz from "../../viz";
+import * as Viz from "../../lib/viz";
 
 function drawChart(containerId: string, domain: [number, number], data: Viz.SimplexNoiseViz.Result['data'], i = 0) {
     // const data = generateData(dataset.domain, 50, dataset.fn);
