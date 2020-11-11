@@ -40,6 +40,11 @@ export class Api {
         this.injectData(data);
     }
 
+    async createChart(body: {projectId: string; code: string}) {
+        const data = await this.req.post<ApiData.Response>(`/charts`, body);
+        this.injectData(data);
+    }
+
     async updateChart(chartId: string, body: {projectId?: string; code?: string}) {
         const data = await this.req.put<ApiData.Response>(`/charts/${chartId}`, body);
         this.injectData(data);
