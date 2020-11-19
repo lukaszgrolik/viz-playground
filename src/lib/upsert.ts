@@ -5,7 +5,7 @@ interface UpsertOpts<TSource, TBody> {
 }
 
 export function upsert<TSource, TBody>(itemArr: TSource[], bodyArr: TBody[] | undefined, opts: UpsertOpts<TSource, TBody>): void {
-    if(!bodyArr || bodyArr.length === 0) return;
+    if (!bodyArr || bodyArr.length === 0) return;
 
     const itemsToAdd: TSource[] = [];
 
