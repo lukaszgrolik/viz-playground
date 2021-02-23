@@ -113,7 +113,7 @@ function renderList() {
 
     // listItem.exit().remove();
 
-    setInterval(() => {
+    const intId = setInterval(() => {
         // idCounter += 1;
         // // data = data.concat({id: idCounter, name: genName()})
         // // data[0] = {...data[0], name: 'ble ble'};
@@ -156,11 +156,15 @@ function renderList() {
 
         update(data);
     }, 1000);
+
+    return () => {
+        clearInterval(intId);
+    };
 }
 
 export function ListTest() {
     React.useEffect(() => {
-        renderList();
+        return renderList();
     }, [])
 
     return (
