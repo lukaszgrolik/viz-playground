@@ -1,9 +1,24 @@
 import * as React from 'react';
 import { useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 
 import * as Store from '../../store/store';
 import { ChartBlock } from './chart-block';
+
+const Wrapper = styled.div`
+    padding: 2em;
+`;
+const ContentWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+`;
+const ChartsList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+`;
 
 interface Props {
     store: Store.Store;
@@ -22,6 +37,8 @@ export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) 
     async function onNewChartSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
+        if (!params.projectId) return;
+
         setNewChartPending(true);
 
         // await store.api.createChart({ projectId: params.projectId, code: newChartName });
@@ -36,13 +53,13 @@ export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) 
     }
 
     return (
-        <div>
+        <Wrapper>
             {
                 !project
                     ?
                     <p>no project found</p>
                     :
-                    <div>
+                    <ContentWrapper>
                         <div>
                             <form onSubmit={onNewChartSubmit}>
                                 {/* <input
@@ -56,7 +73,7 @@ export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) 
                             </form>
                         </div>
 
-                        <div>
+                        <ChartsList>
                             {
                                 project.charts.length === 0
                                     ?
@@ -68,9 +85,9 @@ export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) 
                                         );
                                     })
                             }
-                        </div>
-                    </div>
+                        </ChartsList>
+                    </ContentWrapper>
             }
-        </div>
+        </Wrapper>
     );
 });

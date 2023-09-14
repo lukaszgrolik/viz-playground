@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 // import {config} from "ace-builds";
 // import ace from 'ace-builds/src-noconflict/ace';
 import AceEditor from "react-ace";
+import styled from '@emotion/styled';
 
 import * as Store from '../../store/store';
 import * as Viz from '../../lib/viz';
@@ -38,6 +39,11 @@ function getChartId(chartId: string) {
 }
 
 const themes = ['monokai', 'tomorrow', 'solarized_light'];
+
+const Wrapper = styled.div`
+  display: flex;
+  gap: 1em;
+`;
 
 export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observer(({chart}) => {
     const [theme, setTheme] = React.useState(themes[2]);
@@ -106,7 +112,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
     }
 
     return (
-        <div style={{display: 'flex'}}>
+        <Wrapper>
             <div>
                 {/* <pre><textarea
                     rows={10}
@@ -124,7 +130,10 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                     onChange={onCodeChange}
                     name={`ace_editor_${chart.projectId}_${chart.id}`}
                     editorProps={{ $blockScrolling: true }}
-                    setOptions={{ useWorker: false }}
+                    setOptions={{
+                        useWorker: false,
+                        fontSize: 16,
+                    }}
                 />
 
                 <button disabled={savePending || !isDirty()} style={{color: isDirty() ? 'orange' : 'inherit'}} onClick={onSaveClick}>{savePending ? 'saving...' : 'save'}</button>
@@ -143,6 +152,6 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
             <div>
                 <svg id={getChartId(chart.id)} width={containerWidth} height={containerHeight} style={{border: '1px solid'}}></svg>
             </div>
-        </div>
+        </Wrapper>
     );
 });

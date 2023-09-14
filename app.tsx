@@ -1,7 +1,8 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import * as ReactDOM from 'react-dom/client';
 // import { BrowserRouter as Router, Route, Link, NavLink } from 'react-router-dom';
-import {BrowserRouter, Link, NavLink, Route, Switch} from 'react-router-dom';
+import {BrowserRouter, Link, NavLink, Route, Routes} from 'react-router-dom';
+import styled from '@emotion/styled';
 
 import * as Store from './src/store/store';
 import { LegacyView } from './src/views/legacy-view/legacy-view';
@@ -69,28 +70,56 @@ const store = new Store.Store();
 // store.localStorage.initData();
 // store.localStorage.loadData();
 
+const TopPanel = styled.div`
+    /* position: sticky;
+    top: 0;
+    z-index: 1000; */
+`;
+const MainMenu = styled.ul`
+    background-color: hsl(240deg, 75%, 90%);
+    display: flex;
+
+    a {
+        display: block;
+        padding: 1em;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+`;
+
+const menu = [
+    {to: "/", label: 'Home'},
+    {to: "/projects", label: 'Projects'},
+    {to: "/legacy", label: 'Legacy'},
+];
+
 const app = (
     <BrowserRouter>
-        <ul>
-            <NavLink activeStyle={{ fontWeight: 'bold' }} exact to="/">Home</NavLink>
-            <NavLink activeStyle={{ fontWeight: 'bold' }} to="/projects">Projects</NavLink>
-            <NavLink activeStyle={{ fontWeight: 'bold' }} to="/legacy">Legacy</NavLink>
-        </ul>
+        <div style={{height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
+            <TopPanel>
+                <MainMenu>
+                    {
+                        menu.map(item => {
+                            return (
+                                <li key={item.label}>
+                                    <NavLink style={props => props.isActive ? { fontWeight: 'bold' } : {}} to={item.to}>{item.label}</NavLink>
+                                </li>
+                            )
+                        })
+                    }
+                </MainMenu>
+            </TopPanel>
 
-        <Switch>
-            <Route path="/" exact={true}>
-                <p>home</p>
-            </Route>
-
-            <Route path="/projects">
-                <MainView store={store} />
-            </Route>
-
-            <Route path="/legacy">
-                <LegacyView />
-            </Route>
-        </Switch>
+            <Routes>
+                <Route path="/" element={<p>home</p>} />
+                <Route path="/projects/*" element={<MainView store={store} />} />
+                <Route path="/legacy" element={<LegacyView />} />
+            </Routes>
+        </div>
     </BrowserRouter>
 );
 
-ReactDOM.render(app, document.getElementById('react-root'));
+const root = ReactDOM.createRoot(document.getElementById('react-root') as HTMLElement);
+root.render(app);

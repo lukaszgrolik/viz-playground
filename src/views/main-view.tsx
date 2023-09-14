@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useRouteMatch } from 'react-router-dom';
 import {action} from 'mobx';
 import {observer} from 'mobx-react-lite';
 
@@ -22,7 +21,7 @@ export const MainView: React.FunctionComponent<{store: Store.Store}> = observer(
     }, []);
 
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {
                 started && !pending
                 &&

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { NavLink, Route, Switch, useLocation, useRouteMatch } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import styled from '@emotion/styled';
 
 import { DynamicChartBox } from './dynamic-chart';
@@ -33,7 +33,7 @@ const Wrapper = styled.div`
 `;
 
 export function LegacyView() {
-    const routeMatch = useRouteMatch();
+    // const routeMatch = useRouteMatch();
 
     return (
         <Wrapper>
@@ -41,11 +41,12 @@ export function LegacyView() {
                 <ul>
                     {
                         pages.map(page => {
-                            const link = `${routeMatch.path}${page.path}`;
+                            // const link = `${routeMatch.path}${page.path}`;
+                            const link = `${page.path}`;
 
                             return (
                                 <li key={page.path}>
-                                    <NavLink activeStyle={{ fontWeight: 'bold' }} to={link}>{page.path}</NavLink>
+                                    <NavLink style={isActive => isActive ? { fontWeight: 'bold' } : {}} to={link}>{page.path}</NavLink>
                                 </li>
                             );
                         })
@@ -54,17 +55,16 @@ export function LegacyView() {
             </div>
 
             <div>
-                <Switch>
+                <Routes>
                     {
                         pages.map(page => {
                             return (
-                                <Route key={page.path} path={routeMatch.path + page.path}>
-                                    <page.Component />
-                                </Route>
+                                // <Route key={page.path} path={routeMatch.path + page.path} element={page.Component} />
+                                <Route key={page.path} path={page.path} element={<page.Component />} />
                             );
                         })
                     }
-                </Switch>
+                </Routes>
             </div>
         </Wrapper>
     );

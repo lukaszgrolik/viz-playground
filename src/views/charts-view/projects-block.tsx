@@ -1,11 +1,31 @@
 import * as React from 'react';
-import { Link, NavLink, useParams, useRouteMatch } from 'react-router-dom';
+import { Link, NavLink, useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 
 import { Store } from '../../store/store';
 
+const Wrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+`;
+const ProjectsList = styled.div`
+    display: flex;
+    flex-direction: column;
+
+    a {
+        display: block;
+        padding: .5em;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, .1);
+        }
+    }
+`;
+
 export const ProjectsBlock: React.FunctionComponent<{ store: Store }> = observer(({ store }) => {
-    const match = useRouteMatch();
+    // const match = useRouteMatch();
     const [newProjectName, setNewProjectName] = React.useState('');
     const [newProjectPending, setNewProjectPending] = React.useState(false);
 
@@ -22,7 +42,7 @@ export const ProjectsBlock: React.FunctionComponent<{ store: Store }> = observer
     }
 
     return (
-        <div>
+        <Wrapper>
             <div>
                 <form onSubmit={onNewProjectSubmit}>
                     <input
@@ -42,22 +62,22 @@ export const ProjectsBlock: React.FunctionComponent<{ store: Store }> = observer
                         ?
                         <p>no projects</p>
                         :
-                        <ul>
+                        <ProjectsList>
                             {
-
                                 store.projects.map(project => {
-                                    const link = `${match.url}/${project.id}/charts`;
+                                    // const link = `${match.url}/${project.id}/charts`;
+                                    const link = `${project.id}/charts`;
 
                                     return (
                                         <li key={project.id}>
-                                            <NavLink activeStyle={{ fontWeight: 'bold' }} to={link}>{project.name}</NavLink>
+                                            <NavLink style={props => props.isActive ? { fontWeight: 'bold' } : {}} to={link} end>{project.name}</NavLink>
                                         </li>
                                     );
                                 })
                             }
-                        </ul>
+                        </ProjectsList>
                 }
             </div>
-        </div>
+        </Wrapper>
     );
 });

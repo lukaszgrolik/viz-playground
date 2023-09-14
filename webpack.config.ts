@@ -40,8 +40,14 @@ const config: webpack.Configuration = {
         host: '0.0.0.0',
         port: 3010,
         historyApiFallback: true,
-        disableHostCheck: true,
-        contentBase: path.join(__dirname, 'web')
+        // disableHostCheck: true,
+        allowedHosts: 'all',
+        // contentBase: path.join(__dirname, 'web')
+        static: {
+            directory: path.join(__dirname, 'web'),
+        },
+        hot: false,
+        liveReload: false,
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
