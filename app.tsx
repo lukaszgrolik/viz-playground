@@ -5,6 +5,7 @@ import {BrowserRouter, Link, NavLink, Route, Routes} from 'react-router-dom';
 import styled from '@emotion/styled';
 
 import * as Store from './src/store/store';
+import { GlobalUtils } from './src/lib/global-utils';
 import { LegacyView } from './src/views/legacy-view/legacy-view';
 import { MainView } from './src/views/main-view';
 // import { Store } from './src/store/store';
@@ -115,7 +116,7 @@ const app = (
             <Routes>
                 <Route path="/" element={<p>home</p>} />
                 <Route path="/projects/*" element={<MainView store={store} />} />
-                <Route path="/legacy" element={<LegacyView />} />
+                <Route path="/legacy/*" element={<LegacyView />} />
             </Routes>
         </div>
     </BrowserRouter>
@@ -123,3 +124,9 @@ const app = (
 
 const root = ReactDOM.createRoot(document.getElementById('react-root') as HTMLElement);
 root.render(app);
+
+declare var window: {
+    __globalUtils: GlobalUtils
+};
+
+window.__globalUtils = new GlobalUtils(store);
