@@ -13,15 +13,15 @@ import { DynamicLineTest } from './dynamic-line-test';
 import { VoronoiGrid } from './voronoi-grid';
 
 const pages: {path: string; Component: React.FC}[] = [
-    {path: '/voronoi-grid', Component: VoronoiGrid},
-    {path: '/dynamic-line', Component: DynamicLineTest},
-    {path: '/list-test', Component: ListTest},
-    {path: '/dynamic-chart', Component: DynamicChartBox},
-    {path: '/simplex-noise', Component: SimplexNoiseBox},
-    {path: '/circles', Component: CirclesBox},
-    {path: '/sum-functions', Component: SumFunctionBox},
-    {path: '/random-walk', Component: RandomWalkBox},
-    {path: '/charts', Component: ChartsBox},
+    {path: 'voronoi-grid', Component: VoronoiGrid},
+    {path: 'dynamic-line', Component: DynamicLineTest},
+    {path: 'list-test', Component: ListTest},
+    {path: 'dynamic-chart', Component: DynamicChartBox},
+    {path: 'simplex-noise', Component: SimplexNoiseBox},
+    {path: 'circles', Component: CirclesBox},
+    {path: 'sum-functions', Component: SumFunctionBox},
+    {path: 'random-walk', Component: RandomWalkBox},
+    {path: 'charts', Component: ChartsBox},
 ];
 
 const Wrapper = styled.div`

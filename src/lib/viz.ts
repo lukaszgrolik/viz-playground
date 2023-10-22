@@ -160,7 +160,80 @@ export class Viz {
         return Math.round(val * n) / n;
     }
 
-    draw(domain: [number, number], samples: number, callback: (x: number) => number) {
+    times<T>(n: number, cb: (n: number) => T): T[] {
+        return new Array(n).fill(null).map((_, i) => cb(i));
+    }
+
+    // rename to drawLineChart
+    draw(
+        domain: [number, number],
+        samples: number,
+        callback: (x: number) => number,
+        getLabel: (x: number) => string = x => x.toString()
+    ) {
+        const data = generateData(domain, samples, callback);
+
+        // const containerEl = document.getElementById(this.chartId);
+        // if (!containerEl) throw new Error(`element with id ${this.chartId} does not exist`);
+
+        // containerEl.innerHTML += datasetHtml;
+
+        const container = d3.select(`#${this.chartId}`)
+            .attr('width', this.opts.containerWidth)
+            .attr('height', this.opts.containerHeight);
+
+        const getDomain = (min: number, max: number, val: number) => {
+            const size = max - min;
+            const margin = size * val;
+            return [min - margin, max + margin];
+        };
+        const xScale = d3.scaleLinear().domain(getDomain(domain[0], domain[1], .25)).range([0, this.opts.containerWidth]);
+        const yScale = d3.scaleLinear().domain(getDomain(data.min, data.max, .25)).range([this.opts.containerHeight, 0]);
+
+        const xAxis = d3.axisBottom(xScale).tickFormat(getLabel);
+        const yAxis = d3.axisLeft(yScale);
+
+        container
+            .append('g')
+            .attr('transform', `translate(0, ${yScale(0)})`)
+            .call(xAxis);
+
+        container
+            .append('g')
+            .attr('transform', `translate(${xScale(0)}, 0)`)
+            .call(yAxis);
+
+        const xAttr = (d: { x: number; y: number }) => {
+            return xScale(d.x);
+        };
+        const yAttr = (d: { x: number; y: number }) => {
+            return yScale(d.y);
+        };
+
+        const bars = container
+            .selectAll('.bar')
+            .data(data.values)
+            .enter()
+            .append('rect')
+            .classed('bar', true)
+            .attr('width', 1)
+            .attr('height', d => this.opts.containerHeight - yScale(d.y))
+            .attr('x', xAttr)
+            .attr('y', yAttr)
+            .attr('fill', '#ddd')
+
+        container.append("path")
+            .datum(data.values)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 1.5)
+            .attr("d", d3.line<{ x: number; y: number }>()
+                .x(xAttr)
+                .y(yAttr)
+            );
+    }
+
+    drawGrid(domain: [number, number], samples: number, callback: (x: number) => number) {
         const data = generateData(domain, samples, callback);
 
         // const containerEl = document.getElementById(this.chartId);

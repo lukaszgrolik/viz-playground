@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 // import ace from 'ace-builds/src-noconflict/ace';
 import AceEditor from "react-ace";
 import styled from '@emotion/styled';
+import * as d3 from 'd3';
 
 import * as Store from '../../store/store';
 import * as Viz from '../../lib/viz';
@@ -45,6 +46,46 @@ const Wrapper = styled.div`
   gap: 1em;
 `;
 
+class Random {
+    rangeInt(a: number, b: number) {
+        return a + Math.floor(Math.random() * (b - a));
+    }
+
+    sample<T>(arr: T[]): T | undefined {
+        if (arr.length == 0) return undefined;
+
+        return arr[this.rangeInt(0, arr.length)];
+    }
+}
+
+const random = new Random();
+
+class Loop {
+    setUpdateFunction() {
+
+    }
+
+    setFramerate() {
+
+    }
+
+    start() {
+
+    }
+
+    pause() {
+
+    }
+
+    resume() {
+
+    }
+
+    toggle() {
+
+    }
+}
+
 export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observer(({chart}) => {
     const [theme, setTheme] = React.useState(themes[2]);
     const [code, setCode] = React.useState(chart.code);
@@ -57,8 +98,17 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
     );
     const isDirty = () => code !== lastSavedCode;
 
+    // const [codeDisposer, setCodeDisposer] = React.useState<undefined | (() => void)>(undefined);
+    let codeDisposer: undefined | (() => void);
+
     React.useEffect(() => {
+        // console.log('fasf')
         runCode();
+
+        return () => {
+            // console.log('on dispose')
+            if (codeDisposer) codeDisposer();
+        };
     }, []);
 
     function onSwitchColorSchemeClick() {
@@ -68,17 +118,56 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
         setTheme(themes[i]);
     }
 
-    function runCode() {
+    // ! unregister loop (if not found in updated code)
+    let loopFn: (() => void) | undefined;
+    // const [loopFn, setLoopFn] = React.useState <(() => void) | undefined>(undefined);
+    const [hasLoopFn, setHasLoopFn] = React.useState(false);
+
+    // const [registerLoopCb, setRegisterLoopCb] = React.useState<((isLoopRunning: boolean) => void) | undefined>(undefined);
+    let registerLoopCb: ((isLoopRunning: boolean) => void) | undefined;
+
+    function registerLoop(loop: () => void, cb: (isLoopRunning: boolean) => void) {
+        // if (loopFn) throw new Error('loop already registered');
+
+        loopFn = loop;
+        // setHasLoopFn(!!loop);
+
+        // setRegisterLoopCb(() => cb);
+        registerLoopCb = cb;
+    }
+
+    function runCode(): void {
+        // console.log('runCode')
         setCodeError(null);
 
+        const chartId = getChartId(chart.id);
+        const deps: [string, any][] = [
+            ['registerLoop', registerLoop],
+            ['d3', d3],
+            ['random', random],
+            ['viz', viz],
+        ];
+
+        const fn = new Function(...deps.map(d => d[0]), code);
+
+        // @todo handle error on invoke
+        const svg = document.getElementById(chartId)
+        if (svg) svg.innerHTML = '';
+
+        if (codeDisposer) codeDisposer();
+
         try {
-            const fn = new Function('viz', code);
+            const fnRes = fn(...deps.map(d => d[1]));
 
-            // @todo handle error on invoke
-            const svg = document.getElementById(getChartId(chart.id))
-            if (svg) svg.innerHTML = '';
+            if (typeof fnRes === 'function') {
+                // setCodeDisposer(fnRes);
+                codeDisposer = fnRes;
+            }
+            else if (fnRes !== undefined) {
+                throw new Error('Return type must be a disposer function');
+            }
 
-            fn(viz);
+            // setHasLoopFn(!!loopFn);
         }
         catch (err: unknown) {
             console.log('err', err)
@@ -97,6 +186,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
         setCode(val);
     }
 
+    // @todo ctrl+s to save
     async function onSaveClick() {
         setSavePending(true);
 
@@ -109,6 +199,17 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
     // @todo ctrl+enter to run
     function onRunClick() {
         runCode();
+    }
+
+    const [isLoopRunning, setIsLoopRunning] = React.useState(true);
+
+    function onLoopToggleClick() {
+        const val = !isLoopRunning;
+
+        console.log('onLoopToggleClick', registerLoopCb)
+        if (registerLoopCb) registerLoopCb(val);
+
+        setIsLoopRunning(val);
     }
 
     return (
@@ -134,10 +235,20 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                         useWorker: false,
                         fontSize: 16,
                     }}
+                    width="800px"
+                    height="800px"
                 />
 
                 <button disabled={savePending || !isDirty()} style={{color: isDirty() ? 'orange' : 'inherit'}} onClick={onSaveClick}>{savePending ? 'saving...' : 'save'}</button>
                 <button disabled={savePending} onClick={onRunClick}>run</button>
+
+                {
+                    hasLoopFn
+                    &&
+                    <>
+                        <button onClick={onLoopToggleClick}>{isLoopRunning ? 'pause' : 'resume'}</button>
+                    </>
+                }
 
                 {
                     codeError
