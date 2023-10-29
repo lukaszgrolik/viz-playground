@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 // import {config} from "ace-builds";
 // import ace from 'ace-builds/src-noconflict/ace';
@@ -6,8 +7,8 @@ import AceEditor from "react-ace";
 import styled from '@emotion/styled';
 import * as d3 from 'd3';
 
-import * as Store from '../../store/store';
-import * as Viz from '../../lib/viz';
+import * as Store from '../../../store/store';
+import * as Viz from '../../../lib/viz';
 
 // // import "ace-builds/webpack-resolver";
 // import jsWorkerUrl from "file-loader!ace-builds/src-noconflict/worker-javascript";
@@ -60,7 +61,96 @@ class Random {
 
 const random = new Random();
 
-class Loop {
+class ChartUI {
+    theme: string = themes[2];
+
+    code: string = "";
+    lastCodeChangeTime: number = 0;
+
+    codeError: Error | null = null;
+
+    savePending: boolean = false;
+    lastSavedCode: string = "";
+
+    private intervalId: NodeJS.Timeout;
+
+    constructor(readonly chart: Store.Chart) {
+        this.code = chart.code;
+        this.lastSavedCode = this.code;
+
+        makeObservable(this, {
+            theme: observable,
+            switchColorScheme: action,
+
+            code: observable,
+            setCode: action,
+
+            lastCodeChangeTime: observable,
+
+            codeError: observable,
+            setCodeError: action,
+
+            savePending: observable,
+            lastSavedCode: observable,
+            save: action,
+
+            isDirty: computed
+        });
+
+        this.intervalId = setInterval(() => {
+            // @hardcoded
+            const minTimePassedFromLastChange = Date.now() - this.lastCodeChangeTime >= 1000;
+            // console.log("lastCodeChangeTime", this.lastCodeChangeTime)
+            // console.log("Date.now() - lastCodeChangeTime", Date.now() - this.lastCodeChangeTime)
+
+            if (this.isDirty && minTimePassedFromLastChange) {
+                this.save();
+                // console.log('saving now...')
+            }
+            // @hardcoded
+        }, 500);
+
+    }
+
+    clear() {
+        clearInterval(this.intervalId);
+    }
+
+    get isDirty(): boolean {
+        return this.code !== this.lastSavedCode;
+    }
+
+    switchColorScheme(): void {
+        const currentThemeIndex = themes.indexOf(this.theme);
+        let i = currentThemeIndex === themes.length - 1 ? 0 : currentThemeIndex + 1;
+
+        this.theme = themes[i];
+    }
+
+    setCode(val: string): void {
+        this.code = val;
+        this.lastCodeChangeTime = Date.now();
+    }
+
+    setCodeError(val: Error | null): void {
+        this.codeError = val;
+    }
+
+    async save() {
+        this.savePending = true;
+
+        await this.chart.store.api.updateChart(this.chart.id, {
+            code: this.code,
+        });
+
+        runInAction(() => {
+            this.lastSavedCode = this.code;
+            this.savePending = false;
+        });
+    }
+}
+
+class CodeRunner {
     setUpdateFunction() {
 
     }
@@ -87,16 +177,19 @@ class Loop {
 }
 
 export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observer(({chart}) => {
-    const [theme, setTheme] = React.useState(themes[2]);
-    const [code, setCode] = React.useState(chart.code);
-    const [codeError, setCodeError] = React.useState<Error | null>(null);
-    // const [previousCode, setPreviousCode] = React.useState(code);
-    const [lastSavedCode, setLastSavedCode] = React.useState(code);
-    const [savePending, setSavePending] = React.useState(false);
+    // const [theme, setTheme] = React.useState(themes[2]);
+    // const [code, setCode] = React.useState(chart.code);
+    // const [codeError, setCodeError] = React.useState<Error | null>(null);
+    //// const [previousCode, setPreviousCode] = React.useState(code);
+    // const [lastSavedCode, setLastSavedCode] = React.useState(code);
+    // const [savePending, setSavePending] = React.useState(false);
+    const [chartUI] = React.useState(
+        new ChartUI(chart)
+    );
     const [viz] = React.useState(
         new Viz.Viz(getChartId(chart.id), { containerWidth, containerHeight })
     );
-    const isDirty = () => code !== lastSavedCode;
+    // const [lastCodeChangeTime, setLastCodeChangeTime] = React.useState<number>(0);
 
     // const [codeDisposer, setCodeDisposer] = React.useState<undefined | (() => void)>(undefined);
     let codeDisposer: undefined | (() => void);
@@ -106,17 +199,16 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
         runCode();
 
         return () => {
+            chartUI.clear();
+
             // console.log('on dispose')
             if (codeDisposer) codeDisposer();
         };
     }, []);
 
-    function onSwitchColorSchemeClick() {
-        const currentThemeIndex = themes.indexOf(theme);
-        let i = currentThemeIndex === themes.length - 1 ? 0 : currentThemeIndex + 1;
-
-        setTheme(themes[i]);
-    }
+    const onSwitchColorSchemeClick = () => chartUI.switchColorScheme();
+    const onCodeChange = (val: string) => chartUI.setCode(val);;
+    const onSaveClick = () => chartUI.save();
 
     // ! unregister loop (if not found in updated code)
     let loopFn: (() => void) | undefined;
@@ -138,7 +230,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
 
     function runCode(): void {
         // console.log('runCode')
-        setCodeError(null);
+        chartUI.setCodeError(null);
 
         const chartId = getChartId(chart.id);
         const deps: [string, any][] = [
@@ -148,7 +240,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
             ['viz', viz],
         ];
 
-        const fn = new Function(...deps.map(d => d[0]), code);
+        const fn = new Function(...deps.map(d => d[0]), chartUI.code);
 
         // @todo handle error on invoke
         const svg = document.getElementById(chartId)
@@ -172,34 +264,14 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
         catch (err: unknown) {
             console.log('err', err)
             if (err instanceof Error)
-                setCodeError(err);
+                chartUI.setCodeError(err);
             else
                 console.warn('unknown error', err);
         }
     }
 
-    // async function onCodeChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    async function onCodeChange(val: string) {
-        // chart.setCode(e.currentTarget.value);
-
-        // setCode(e.currentTarget.value);
-        setCode(val);
-    }
-
-    // @todo ctrl+s to save
-    async function onSaveClick() {
-        setSavePending(true);
-
-        await chart.store.api.updateChart(chart.id, {code});
-
-        setLastSavedCode(code);
-        setSavePending(false);
-    }
-
     // @todo ctrl+enter to run
-    function onRunClick() {
-        runCode();
-    }
+    const onRunClick = () => runCode();
 
     const [isLoopRunning, setIsLoopRunning] = React.useState(true);
 
@@ -222,12 +294,12 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                     disabled={savePending}
                     onChange={onCodeChange}
                 /></pre> */}
-                <button onClick={onSwitchColorSchemeClick}>{theme}</button>
+                <button onClick={onSwitchColorSchemeClick}>{chartUI.theme}</button>
 
                 <AceEditor
                     mode="javascript"
-                    theme={theme}
-                    value={code}
+                    theme={chartUI.theme}
+                    value={chartUI.code}
                     onChange={onCodeChange}
                     name={`ace_editor_${chart.projectId}_${chart.id}`}
                     editorProps={{ $blockScrolling: true }}
@@ -239,8 +311,14 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                     height="800px"
                 />
 
-                <button disabled={savePending || !isDirty()} style={{color: isDirty() ? 'orange' : 'inherit'}} onClick={onSaveClick}>{savePending ? 'saving...' : 'save'}</button>
-                <button disabled={savePending} onClick={onRunClick}>run</button>
+                <button
+                    disabled={chartUI.savePending || !chartUI.isDirty}
+                    style={{ color: chartUI.isDirty ? 'orange' : 'inherit'}}
+                    onClick={onSaveClick}
+                >
+                    {chartUI.savePending ? 'saving...' : 'save'}
+                </button>
+                <button disabled={chartUI.savePending} onClick={onRunClick}>run</button>
 
                 {
                     hasLoopFn
@@ -251,11 +329,11 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                 }
 
                 {
-                    codeError
+                    chartUI.codeError
                     &&
                     <div>
-                        <div style={{fontFamily: 'monospace', backgroundColor: '#eee'}}>{codeError.constructor.name}: {codeError.message}</div>
-                        <pre style={{backgroundColor: 'hsl(0, 100%, 95%)'}}>{codeError.stack}</pre>
+                        <div style={{fontFamily: 'monospace', backgroundColor: '#eee'}}>{chartUI.codeError.constructor.name}: {chartUI.codeError.message}</div>
+                            <pre style={{ backgroundColor: 'hsl(0, 100%, 95%)' }}>{chartUI.codeError.stack}</pre>
                     </div>
                 }
             </div>

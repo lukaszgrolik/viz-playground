@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 
 import * as Store from '../../store/store';
-import { ChartBlock } from './chart-block';
+import { ChartBlock } from './chart-block/chart-block';
 
 const Wrapper = styled.div`
     padding: 2em;
