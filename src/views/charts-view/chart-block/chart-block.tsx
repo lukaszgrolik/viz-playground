@@ -2,7 +2,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 // import {config} from "ace-builds";
 // import ace from 'ace-builds/src-noconflict/ace';
-import AceEditor from "react-ace";
+import AceEditor, { ICommand } from "react-ace";
 import styled from '@emotion/styled';
 import * as d3 from 'd3';
 
@@ -182,6 +182,16 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
         setIsLoopRunning(val);
     }
 
+    const aceCommands: ICommand[] = [
+        {
+            name: 'runCode',
+            bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+            exec: editor => {
+                runCode();
+            },
+        },
+    ];
+
     return (
         <Wrapper>
             <div>
@@ -207,6 +217,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                     }}
                     width="800px"
                     height="800px"
+                    commands={aceCommands}
                 />
 
                 <button
