@@ -1,14 +1,10 @@
 import * as React from 'react';
-import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 // import {config} from "ace-builds";
 // import ace from 'ace-builds/src-noconflict/ace';
 import AceEditor from "react-ace";
 import styled from '@emotion/styled';
 import * as d3 from 'd3';
-
-import * as Store from '../../../store/store';
-import * as Viz from '../../../lib/viz';
 
 // // import "ace-builds/webpack-resolver";
 // import jsWorkerUrl from "file-loader!ace-builds/src-noconflict/worker-javascript";
@@ -19,6 +15,11 @@ import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/theme-tomorrow";
 import "ace-builds/src-noconflict/theme-solarized_light";
+
+import { LukRandom } from '../../../luk-utils/luk-random';
+import * as Viz from '../../../lib/viz';
+import * as Store from '../../../store/store';
+import { ChartUI } from './chart-ui';
 
 function formatFunctionCode(str: string): string {
     const lines = str.split('\n');
@@ -40,115 +41,12 @@ function getChartId(chartId: string) {
     return `svg_chart_${chartId}`;
 }
 
-const themes = ['monokai', 'tomorrow', 'solarized_light'];
-
 const Wrapper = styled.div`
   display: flex;
   gap: 1em;
 `;
 
-class Random {
-    rangeInt(a: number, b: number) {
-        return a + Math.floor(Math.random() * (b - a));
-    }
-
-    sample<T>(arr: T[]): T | undefined {
-        if (arr.length == 0) return undefined;
-
-        return arr[this.rangeInt(0, arr.length)];
-    }
-}
-
-const random = new Random();
-
-class ChartUI {
-    theme: string = themes[2];
-
-    code: string = "";
-    lastCodeChangeTime: number = 0;
-
-    codeError: Error | null = null;
-
-    savePending: boolean = false;
-    lastSavedCode: string = "";
-
-    private intervalId: NodeJS.Timeout;
-
-    constructor(readonly chart: Store.Chart) {
-        this.code = chart.code;
-        this.lastSavedCode = this.code;
-
-        makeObservable(this, {
-            theme: observable,
-            switchColorScheme: action,
-
-            code: observable,
-            setCode: action,
-
-            lastCodeChangeTime: observable,
-
-            codeError: observable,
-            setCodeError: action,
-
-            savePending: observable,
-            lastSavedCode: observable,
-            save: action,
-
-            isDirty: computed
-        });
-
-        this.intervalId = setInterval(() => {
-            // @hardcoded
-            const minTimePassedFromLastChange = Date.now() - this.lastCodeChangeTime >= 1000;
-            // console.log("lastCodeChangeTime", this.lastCodeChangeTime)
-            // console.log("Date.now() - lastCodeChangeTime", Date.now() - this.lastCodeChangeTime)
-
-            if (this.isDirty && minTimePassedFromLastChange) {
-                this.save();
-                // console.log('saving now...')
-            }
-            // @hardcoded
-        }, 500);
-
-    }
-
-    clear() {
-        clearInterval(this.intervalId);
-    }
-
-    get isDirty(): boolean {
-        return this.code !== this.lastSavedCode;
-    }
-
-    switchColorScheme(): void {
-        const currentThemeIndex = themes.indexOf(this.theme);
-        let i = currentThemeIndex === themes.length - 1 ? 0 : currentThemeIndex + 1;
-
-        this.theme = themes[i];
-    }
-
-    setCode(val: string): void {
-        this.code = val;
-        this.lastCodeChangeTime = Date.now();
-    }
-
-    setCodeError(val: Error | null): void {
-        this.codeError = val;
-    }
-
-    async save() {
-        this.savePending = true;
-
-        await this.chart.store.api.updateChart(this.chart.id, {
-            code: this.code,
-        });
-
-        runInAction(() => {
-            this.lastSavedCode = this.code;
-            this.savePending = false;
-        });
-    }
-}
+const random = new LukRandom();
 
 class CodeRunner {
     setUpdateFunction() {
