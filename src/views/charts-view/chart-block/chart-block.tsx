@@ -74,7 +74,8 @@ class CodeRunner {
     }
 }
 
-export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observer(({chart}) => {
+export const ChartBlock: React.FunctionComponent<{store: Store.Store, chart: Store.Chart}> = observer(({store, chart}) => {
+    const aceEditorRef = React.useRef<AceEditor>(null);
     // const [theme, setTheme] = React.useState(themes[2]);
     // const [code, setCode] = React.useState(chart.code);
     // const [codeError, setCodeError] = React.useState<Error | null>(null);
@@ -93,6 +94,15 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
     let codeDisposer: undefined | (() => void);
 
     React.useEffect(() => {
+        restoreChartScroll();
+        function restoreChartScroll() {
+            const bsChart = store.browserStorage.getChart(chart.id);
+            if (bsChart) {
+                aceEditorRef.current?.editor.session.setScrollLeft(bsChart.scrollLeft || 0);
+                aceEditorRef.current?.editor.session.setScrollTop(bsChart.scrollTop || 0);
+            }
+        }
+
         // console.log('fasf')
         runCode();
 
@@ -205,6 +215,7 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                 <button onClick={onSwitchColorSchemeClick}>{chartUI.theme}</button>
 
                 <AceEditor
+                    ref={aceEditorRef}
                     mode="javascript"
                     theme={chartUI.theme}
                     value={chartUI.code}
@@ -218,6 +229,15 @@ export const ChartBlock: React.FunctionComponent<{chart: Store.Chart}> = observe
                     width="800px"
                     height="800px"
                     commands={aceCommands}
+                    onScroll={editor => {
+                        saveChartScroll();
+                        function saveChartScroll() {
+                            const scrollLeft = editor.session.getScrollLeft();
+                            const scrollTop = editor.session.getScrollTop();
+
+                            store.browserStorage.updateChart(chart.id, {scrollLeft, scrollTop});
+                        }
+                    }}
                 />
 
                 <button

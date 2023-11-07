@@ -66,6 +66,7 @@ viz.draw([0, data.values.length - 1], data.values.length, x => {
 };
 
 const store = new Store.Store();
+store.browserStorage.initialize();
 
 // const store = new Store();
 // store.localStorage.initData();

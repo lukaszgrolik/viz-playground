@@ -1,6 +1,8 @@
 import { action } from "mobx";
 
 import * as Store from "../store/store";
+import {Chart} from "../store/chart";
+import {Project} from "../store/project";
 import { ApiData } from "./interfaces";
 import { Req } from "./request";
 import { upsert } from "./upsert";
@@ -17,14 +19,14 @@ export class Api {
             // this.store.projects.length = 0;
             upsert(this.store.projects, data.projects, {
                 find: (source, body) => source.id === body.id,
-                mapInsert: body => new Store.Project(this.store, body.id, body.name),
+                mapInsert: body => new Project(this.store, body.id, body.name),
                 onUpdate: (found, body) => found.update(body),
             });
 
             // this.store.charts.length = 0;
             upsert(this.store.charts, data.charts, {
                 find: (source, body) => source.id === body.id,
-                mapInsert: body => new Store.Chart(this.store, body.id, body.projectId, body.label, body.code),
+                mapInsert: body => new Chart(this.store, body.id, body.projectId, body.label, body.code),
                 onUpdate: (found, body) => found.update(body),
             });
         })();

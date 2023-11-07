@@ -22,16 +22,28 @@ const ChartsList = styled.div`
 
 interface Props {
     store: Store.Store;
+    onScrollInitialized: (project: Store.Project | null, opts: {left: number; top: number}) => void;
 }
 
-export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) => {
+export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store, onScrollInitialized }) => {
     const params = useParams<{projectId: string}>();
     const [project, setProject] = React.useState<Store.Project | null>(null);
     // const [newChartName, setNewChartName] = React.useState('');
     const [newChartPending, setNewChartPending] = React.useState(false);
 
     React.useEffect(() => {
-        setProject(store.projects.find(p => p.id === params.projectId) || null);
+        const proj = store.projects.find(p => p.id === params.projectId) || null;
+
+        setProject(proj || null);
+
+        callProjectScrollInitialized();
+        function callProjectScrollInitialized() {
+            if (proj) {
+                const bsProject = store.browserStorage.getProject(proj.id);
+
+                onScrollInitialized(proj, { left: bsProject?.scrollLeft || 0, top: bsProject?.scrollTop || 0});
+            }
+        }
     }, [params.projectId]);
 
     async function onNewChartSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -81,7 +93,7 @@ export const ChartsBlock: React.FunctionComponent<Props> = observer(({ store }) 
                                     :
                                     project.charts.map(chart => {
                                         return (
-                                            <ChartBlock key={chart.id} chart={chart} />
+                                            <ChartBlock key={chart.id} store={store} chart={chart} />
                                         );
                                     })
                             }
