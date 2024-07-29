@@ -142,6 +142,7 @@ export const ChartBlock: React.FunctionComponent<{store: Store.Store, chart: Sto
 
         const chartId = getChartId(chart.id);
         const deps: [string, any][] = [
+            // ['datasets', datasets],
             ['registerLoop', registerLoop],
             ['d3', d3],
             ['random', random],
