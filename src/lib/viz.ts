@@ -169,7 +169,7 @@ export class Viz {
         domain: [number, number],
         samples: number,
         callback: (x: number) => number,
-        getLabel: (x: number) => string = x => x.toString()
+        getLabel: ((x: number) => string) | undefined = undefined
     ) {
         const data = generateData(domain, samples, callback);
 
@@ -187,16 +187,19 @@ export class Viz {
             const margin = size * val;
             return [min - margin, max + margin];
         };
-        const xScale = d3.scaleLinear().domain(getDomain(domain[0], domain[1], .25)).range([0, this.opts.containerWidth]);
-        const yScale = d3.scaleLinear().domain(getDomain(data.min, data.max, .25)).range([this.opts.containerHeight, 0]);
+        const marginRatio = .25;
+        const xScale = d3.scaleLinear().domain(getDomain(domain[0], domain[1], marginRatio)).range([0, this.opts.containerWidth]);
+        const yScale = d3.scaleLinear().domain(getDomain(data.min, data.max, marginRatio)).range([this.opts.containerHeight, 0]);
 
-        const xAxis = d3.axisBottom(xScale).tickFormat(getLabel);
+        // @fix doesn't apply marginRatio
+        // const xAxis = d3.axisBottom(xScale).tickFormat((domainValue, index) => getLabel(index));
+
         const yAxis = d3.axisLeft(yScale);
 
-        container
-            .append('g')
-            .attr('transform', `translate(0, ${yScale(0)})`)
-            .call(xAxis);
+        // container
+        //     .append('g')
+        //     .attr('transform', `translate(0, ${yScale(0)})`)
+        //     .call(xAxis);
 
         container
             .append('g')
@@ -231,6 +234,24 @@ export class Viz {
                 .x(xAttr)
                 .y(yAttr)
             );
+
+        if (getLabel !== undefined) {
+            container
+            .append('g')
+            .attr("transform", () => `translate(0, ${this.opts.containerHeight})`)
+            .selectAll(".text")
+                .data(data.values)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                // .attr('x', xAttr)
+                .attr('transform', d => `translate(${xAttr(d)}, 0) rotate(-65)`)
+                // .style("text-anchor", "end")
+                // .attr("transform", "rotate(-65)")
+                // .attr("dx", ".75em")
+                // .attr("dy", ".75em")
+                .text((d, i) => getLabel(d.x));
+        }
     }
 
     drawGrid(domain: [number, number], samples: number, callback: (x: number) => number) {

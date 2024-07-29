@@ -34,7 +34,7 @@ function formatFunctionCode(str: string): string {
     }).join('\n');
 }
 
-const containerWidth = 350;
+const containerWidth = 700;
 const containerHeight = 350;
 
 function getChartId(chartId: string) {
@@ -148,33 +148,47 @@ export const ChartBlock: React.FunctionComponent<{store: Store.Store, chart: Sto
             ['viz', viz],
         ];
 
-        const fn = new Function(...deps.map(d => d[0]), chartUI.code);
-
-        // @todo handle error on invoke
-        const svg = document.getElementById(chartId)
-        if (svg) svg.innerHTML = '';
-
-        if (codeDisposer) codeDisposer();
-
+        // catch syntax errors
         try {
-            const fnRes = fn(...deps.map(d => d[1]));
+            const fn = new Function(...deps.map(d => d[0]), chartUI.code);
 
-            if (typeof fnRes === 'function') {
-                // setCodeDisposer(fnRes);
-                codeDisposer = fnRes;
-            }
-            else if (fnRes !== undefined) {
-                throw new Error('Return type must be a disposer function');
-            }
-
-            // setHasLoopFn(!!loopFn);
+            processFunction(fn);
         }
         catch (err: unknown) {
-            console.log('err', err)
             if (err instanceof Error)
                 chartUI.setCodeError(err);
             else
                 console.warn('unknown error', err);
+        }
+
+        function processFunction(fn: Function) {
+            // @todo handle error on invoke
+            const svg = document.getElementById(chartId)
+            if (svg) svg.innerHTML = '';
+
+            if (codeDisposer) codeDisposer();
+
+            // catch runtime error
+            try {
+                const fnRes = fn(...deps.map(d => d[1]));
+
+                if (typeof fnRes === 'function') {
+                    // setCodeDisposer(fnRes);
+                    codeDisposer = fnRes;
+                }
+                else if (fnRes !== undefined) {
+                    throw new Error('Return type must be a disposer function');
+                }
+
+                // setHasLoopFn(!!loopFn);
+            }
+            catch (err: unknown) {
+                console.log('err', err)
+                if (err instanceof Error)
+                    chartUI.setCodeError(err);
+                else
+                    console.warn('unknown error', err);
+            }
         }
     }
 
