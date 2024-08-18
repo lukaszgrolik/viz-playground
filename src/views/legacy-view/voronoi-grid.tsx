@@ -1,8 +1,9 @@
 import * as React from 'react';
 import styled from '@emotion/styled';
 import * as d3 from "d3";
-import { observable } from 'mobx';
+import { observable, runInAction } from 'mobx';
 import * as Simplex from 'open-simplex-noise';
+import { observer } from 'mobx-react-lite';
 
 // @todo animate "colors" setting change
 
@@ -117,16 +118,144 @@ const Wrapper = styled.div`
 
 `;
 
-export function VoronoiGrid() {
+// import Delaunator from 'delaunator';
+// const Delaunator = require('delaunator').default;
+// console.log('Delaunator', Delaunator)
+
+type Point = [number, number];
+type Triangle = [Point, Point, Point]
+type Polygon = Point[];
+
+const delaunayData = observable<{
+    origCoords: Point[];
+    triangleCoords: Triangle[];
+    circumcenters: Point[];
+    cellPolygons: Polygon[];
+}>({
+    origCoords: [],
+    triangleCoords: [],
+    circumcenters: [],
+    cellPolygons: [],
+})
+
+import PoissonDiskSampling from 'poisson-disk-sampling';
+
+// console.log('poisson points', points)
+
+export const VoronoiGrid = observer(() => {
     const svg1 = React.useRef<SVGSVGElement>(null);
 
     React.useEffect(() => {
-        if (svg1.current) renderSvg(svg1.current);
+        // const coordsOrig = [
+        //     [100, 100],
+        //     [200, 100],
+        //     [200, 200],
+        //     [100, 200],
+        //     [170, 150],
+        //     [250, 250],
+        // ];
+        const poisson = new PoissonDiskSampling({
+            shape: [settings.width, settings.height],
+            minDistance: 100,
+            maxDistance: 150,
+            tries: 10
+        });
+        const coordsOrig = poisson.fill() as Point[];
+
+        // const coords = coordsOrig.flatMap(x => x);
+
+        // const delaunay = new Delaunator(coords);
+        // // console.log(delaunay.triangles);
+        const delaunay = d3.Delaunay.from(coordsOrig);
+
+        const coordinates: Triangle[] = [];
+
+        for (let i = 0; i < delaunay.triangles.length; i += 3) {
+            coordinates.push([
+                coordsOrig[delaunay.triangles[i]],
+                coordsOrig[delaunay.triangles[i + 1]],
+                coordsOrig[delaunay.triangles[i + 2]]
+            ] as Triangle);
+        }
+
+        const voronoi = delaunay.voronoi([0, 0, settings.width, settings.height]);
+
+        const circumcenters: Point[] = [];
+        for (let i = 0; i < voronoi.circumcenters.length; i += 2) {
+            circumcenters.push([
+                voronoi.circumcenters[i],
+                voronoi.circumcenters[i + 1],
+            ] as Point);
+        }
+
+        const cellPolygons = Array.from(voronoi.cellPolygons()).map((poly, i) => {
+            // console.log('poly', i, poly);
+
+            return poly as unknown as Polygon;
+        });
+
+        runInAction(() => {
+            delaunayData.origCoords = coordsOrig;
+            delaunayData.triangleCoords = coordinates;
+            delaunayData.circumcenters = circumcenters;
+            delaunayData.cellPolygons = cellPolygons;
+        });
+
+        // if (svg1.current) renderSvg(svg1.current);
     }, []);
 
     return (
         <Wrapper>
-            <svg ref={svg1} width={settings.width} height={settings.height}></svg>
+            <svg ref={svg1} width={settings.width} height={settings.height}>
+                {
+                    delaunayData.origCoords.map((c, i) => {
+                        return (
+                            <circle key={i} cx={c[0]} cy={c[1]} r={3} fill='red'></circle>
+                        )
+                    })
+                }
+
+                {
+                    delaunayData.triangleCoords.map((t, i) => {
+                        // console.log('t[0]', t[0])
+                        const p1 = t[0];
+                        const p2 = t[1];
+                        const p3 = t[2];
+                        // const y1 = t[0];
+                        // const p2 = t[1];
+
+                        return (
+                            <g key={i}>
+                              <line x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="grey"></line>
+                              <line x1={p2[0]} y1={p2[1]} x2={p3[0]} y2={p3[1]} stroke="grey"></line>
+                              <line x1={p3[0]} y1={p3[1]} x2={p1[0]} y2={p1[1]} stroke="grey"></line>
+                            </g>
+                        )
+                    })
+                }
+
+                {
+                    delaunayData.circumcenters.map((p, i) => {
+                        return (
+                            <circle key={i} cx={p[0]} cy={p[1]} r={5} fill='black'></circle>
+                        )
+                    })
+                }
+
+                {
+                    delaunayData.cellPolygons.map((poly) => {
+                        return poly.map((p, i) => {
+                            const nextPoint = i < (poly.length - 1) ? poly[i + 1] : poly[0];
+
+                            return (
+                                <g key={i}>
+                                    <line x1={p[0]} y1={p[1]} x2={nextPoint[0]} y2={nextPoint[1]} stroke="orange"></line>
+                                </g>
+                            )
+                        })
+                    })
+                }
+            </svg>
         </Wrapper>
     );
-}
+});
