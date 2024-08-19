@@ -10,7 +10,7 @@ import { CirclesBox } from './circles-box';
 import { SimplexNoiseBox } from './simplex-noise-box';
 import { ListTest } from './list-test';
 import { DynamicLineTest } from './dynamic-line-test';
-import { VoronoiGrid } from './voronoi-grid';
+import { VoronoiGrid } from './voronoi-grid/voronoi-grid';
 
 const pages: {path: string; Component: React.FC}[] = [
     {path: 'voronoi-grid', Component: VoronoiGrid},
