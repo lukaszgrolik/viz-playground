@@ -58,10 +58,10 @@ const Wrapper = styled.div`
 `;
 
 const mainForm = observable({
-    freq: .2,
-    poissonMin: 100,
-    poissonMax: 150,
-    voronoiOpacity: .5,
+    freq: .09,
+    poissonMin: 40,
+    poissonMax: 60,
+    voronoiOpacity: 1,
     setFreq(val: number) {
         this.freq = val;
     },
