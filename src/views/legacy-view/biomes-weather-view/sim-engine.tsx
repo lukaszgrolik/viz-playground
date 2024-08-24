@@ -6,10 +6,10 @@ export class SimEngine {
     start() {
         this.opts.onUpdate();
 
-        requestAnimationFrame(this.loop);
+        // requestAnimationFrame(this.loop);
     }
 
     loop() {
-        requestAnimationFrame(this.loop);
+        // requestAnimationFrame(this.loop);
     }
 }

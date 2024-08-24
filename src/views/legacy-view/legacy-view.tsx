@@ -11,11 +11,13 @@ import { SimplexNoiseBox } from './simplex-noise-box';
 import { ListTest } from './list-test';
 import { DynamicLineTest } from './dynamic-line-test';
 import { VoronoiGrid } from './voronoi-grid/voronoi-grid';
-import { biomesWeatherView } from './biomes-weather-view/biomes-weather-view';
+import { BiomesWeatherView } from './biomes-weather-view/biomes-weather-view';
+import { CellularAutomataView } from './cellular-automata-view/cellular-automata-view';
 
 const pages: {path: string; Component: React.FC}[] = [
     {path: 'voronoi-grid', Component: VoronoiGrid},
-    {path: 'biomes-weather', Component: biomesWeatherView},
+    {path: 'biomes-weather', Component: BiomesWeatherView},
+    {path: 'cellular-automata', Component: CellularAutomataView},
     {path: 'dynamic-line', Component: DynamicLineTest},
     {path: 'list-test', Component: ListTest},
     {path: 'dynamic-chart', Component: DynamicChartBox},

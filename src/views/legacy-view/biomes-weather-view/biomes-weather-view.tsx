@@ -41,7 +41,7 @@ const Wrapper = styled.div`
     gap: 2em;
 `;
 
-export const biomesWeatherView = observer(() => {
+export const BiomesWeatherView = observer(() => {
     // ! disposer
     React.useEffect(() => {
         simEngine.start();
